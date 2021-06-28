@@ -1,87 +1,72 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
+using TodoApplicationWebApi.Models;
 
 namespace TodoApplicationWebApi.Controllers
 {
+    [Route("todoItems")]
+    [ApiController]
     public class TodoItemController : Controller
     {
-        // GET: TodoItemController
-        public ActionResult Index()
+        private readonly TodoItemContext _context;
+
+        public TodoItemController(TodoItemContext context)
         {
-            return View();
+            _context = context;
         }
 
-        // GET: TodoItemController/Details/5
-        public ActionResult Details(int id)
+        //GET ALL
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<TodoItem>>> GetAllTasksAsync()
         {
-            return View();
+            var todoItems = await _context.TodoItems.ToListAsync();
+
+            if (todoItems == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(todoItems);
+        }
+        //GET ID
+        [HttpGet("{id}")]
+        public async Task<ActionResult<TodoItem>> GetTaskByIdAsync(long id)
+        {
+            var todoItem = await _context.TodoItems.FindAsync(id);
+            if (todoItem == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(todoItem);
         }
 
-        // GET: TodoItemController/Create
-        public ActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: TodoItemController/Create
+        //POST
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        public async Task<ActionResult<TodoItem>> InsertTaskAsync(TodoItem todoItem)
         {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
+            _context.TodoItems.Add(todoItem);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction("GetTaskById", new { id = todoItem.Id }, todoItem);
         }
 
-        // GET: TodoItemController/Edit/5
-        public ActionResult Edit(int id)
+        //PUT
+        [HttpPut]
+        public async Task UpdateTaskAsync(TodoItem todoItem)
         {
-            return View();
+
         }
 
-        // POST: TodoItemController/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        //DELETE
+        [HttpDelete]
+        public async Task DeleteTaskById(int id)
         {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
-        }
 
-        // GET: TodoItemController/Delete/5
-        public ActionResult Delete(int id)
-        {
-            return View();
-        }
-
-        // POST: TodoItemController/Delete/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
-        {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
         }
     }
 }
