@@ -37,6 +37,7 @@ namespace TodoApplicationWebApi.Controllers
         public async Task<ActionResult<TodoItem>> GetTaskByIdAsync(long id)
         {
             var todoItem = await _context.TodoItems.FindAsync(id);
+            
             if (todoItem == null)
             {
                 return NotFound();
@@ -49,7 +50,12 @@ namespace TodoApplicationWebApi.Controllers
         [HttpPost]
         public async Task<ActionResult<TodoItem>> InsertTaskAsync(TodoItem todoItem)
         {
+            todoItem.CreatedAt = DateTime.Now;
+            todoItem.LastUpdatedAt = DateTime.Now;
+            todoItem.IsComplete = false;
+
             _context.TodoItems.Add(todoItem);
+            
             await _context.SaveChangesAsync();
 
             return CreatedAtAction("GetTaskById", new { id = todoItem.Id }, todoItem);
@@ -57,16 +63,52 @@ namespace TodoApplicationWebApi.Controllers
 
         //PUT
         [HttpPut]
-        public async Task UpdateTaskAsync(TodoItem todoItem)
+        public async Task<ActionResult> UpdateTaskAsync(long id, TodoItem todoItem)
         {
+            if (id != todoItem.Id)
+            {
+                return BadRequest();
+            }
 
+            _context.Entry(todoItem).State = EntityState.Modified;
+
+            todoItem.LastUpdatedAt = DateTime.Now;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch
+            {
+                if (_context.TodoItems.Find(id) == null)
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
         }
 
         //DELETE
         [HttpDelete]
-        public async Task DeleteTaskById(int id)
+        public async Task<ActionResult> DeleteTaskById(long id)
         {
+            var todoItem = await _context.TodoItems.FindAsync(id);
+            
+            if (todoItem  == null)
+            {
+                return NotFound();
+            }
 
+            _context.TodoItems.Remove(todoItem);
+            
+            await _context.SaveChangesAsync();
+
+            return Ok();
         }
     }
 }
